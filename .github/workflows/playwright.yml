@@ -1,4 +1,4 @@
-name: Playwright Tests
+This request has been automatically failed because it uses a deprecated version of `actions/upload-artifact: v3`. Learn more: https://github.blog/changelog/2024-04-16-deprecation-notice-v3-of-the-artifact-actions/name: Playwright Tests
 
 on:
   push:
@@ -12,30 +12,66 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x]   # Node version
-    steps:
-      - uses: actions/checkout@v4
+        node-version: [18.x]  # Node.js version
 
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
 
+      # 3️⃣ Cache npm modules
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 4️⃣ Install dependencies
       - name: Install dependencies
         run: npm ci
 
+      # 5️⃣ Install Playwright browsers
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
+
+      # 6️⃣ Set environment variables from GitHub secrets
       - name: Set environment variables
         run: |
           echo "BASE_URL=${{ secrets.BASE_URL }}" >> $GITHUB_ENV
           echo "PASSWORD=${{ secrets.PASSWORD }}" >> $GITHUB_ENV
 
-      - name: Run tests
-        run: npx playwright test --reporter=html
+      # 7️⃣ Debug environment (optional)
+      - name: Check environment
+        run: |
+          echo "BASE_URL=$BASE_URL"
+          echo "PASSWORD set? $( [ -z "$PASSWORD" ] && echo 'no' || echo 'yes' )"
 
+      # 8️⃣ Run Playwright tests
+      - name: Run Playwright tests
+        run: npx playwright test --workers=4 --reporter=html
+
+      # 9️⃣ Upload Playwright HTML report
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report
+
+      # 🔟 Optional: upload screenshots, videos, traces
+      - name: Upload Playwright artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            playwright-report
+            tests/results/screenshots
+            tests/results/videos
+            tests/results/traces
