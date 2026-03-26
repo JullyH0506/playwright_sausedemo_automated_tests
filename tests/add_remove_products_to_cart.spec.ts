@@ -34,6 +34,6 @@ test.describe('Adding/Removing items to/from card works as expected', () => {
         // Assertion: cart badge updated
         await expect(page.locator('.shopping_cart_badge')).toHaveText('1');
         await pm.onHomePage().deleteItemFromCart(0);
-        await expect(page.locator('.shopping_cart_badge')).toHaveCount(0);
+        await expect(page.locator('.shopping_cart_badge')).toHaveCount(0);//
     });
 });
